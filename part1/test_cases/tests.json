@@ -1,0 +1,90 @@
+{
+    "name": "Parallel World Length Count Tests",
+    "use_valgrind": true,
+    "tests": [
+        {
+            "name": "No Input Files",
+            "description": "Starts the par_letter_counts program with no additional command-line arguments",
+            "command": "./par_letter_counts",
+            "output_file": "test_cases/output/empty.txt"
+        },
+        {
+            "name": "Empty Input File",
+            "description": "Count letter occurrences in a single, empty file",
+            "command": "./par_letter_counts test_cases/resources/empty.txt",
+            "output_file": "test_cases/output/empty_file_count.txt"
+        },
+        {
+            "name": "One-Word Input File",
+            "description": "Count letter occurrences in just one file containing a single word",
+            "command": "./par_letter_counts test_cases/resources/one_word.txt",
+            "output_file": "test_cases/output/one_word.txt"
+        },
+        {
+            "name": "Non-Existent File",
+            "description": "Attempt to count letter occurrences in a non-existent file",
+            "command": "./par_letter_counts not_a_file.txt",
+            "output_file": "test_cases/output/non_existent_file.txt"
+        },
+        {
+            "name": "Multi-Word Input File",
+            "description": "Count letter lengths in just one file containing several words, all lowercase",
+            "command": "./par_letter_counts test_cases/resources/multi_word.txt",
+            "output_file": "test_cases/output/multi_word.txt"
+        },
+        {
+            "name": "Two Single-Word Input Files",
+            "description": "Count letters in two files, each containing one word, all lowercase",
+            "command": "./par_letter_counts test_cases/resources/one_word.txt test_cases/resources/one_word_2.txt",
+            "output_file": "test_cases/output/two_one_words.txt"
+        },
+        {
+            "name": "Two Multi-Word Input Files",
+            "description": "Count letter occurrences in two files, each containing multiple words, all lowercase",
+            "command": "./par_letter_counts test_cases/resources/multi_word.txt test_cases/resources/multi_word_2.txt",
+            "output_file": "test_cases/output/two_multi_words.txt"
+        },
+        {
+            "name": "Several Multi-Word Input Files",
+            "description": "Count letter occurrences in several files, each containing multiple words on one line, all lowercase",
+            "command": "./par_letter_counts test_cases/resources/single_line.txt test_cases/resources/single_line_2.txt test_cases/resources/single_line_3.txt test_cases/resources/single_line_4.txt",
+            "output_file": "test_cases/output/several_multi_words.txt"
+        },
+        {
+            "name": "One Multi-Line Input File",
+            "description": "Count letter occurrences in a file with words on multiple lines, still all lower case",
+            "command": "./par_letter_counts test_cases/resources/multi_line.txt",
+            "output_file": "test_cases/output/multi_line.txt"
+        },
+        {
+            "name": "Several Multi-Line Input Files",
+            "description": "Count letter occurrences in several files, each with words on multiple lines, all lower case",
+            "command": "./par_letter_counts test_cases/resources/multi_line.txt test_cases/resources/multi_line_2.txt test_cases/resources/multi_line_3.txt test_cases/resources/multi_line_4.txt",
+            "output_file": "test_cases/output/several_multi_line.txt"
+        },
+        {
+            "name": "Single Large Input File",
+            "description": "Count letter occurrences in one large text file, still all lowercase",
+            "command": "./par_letter_counts test_cases/resources/large.txt",
+            "output_file": "test_cases/output/single_large.txt"
+        },
+        {
+            "name": "Several Large Input Files",
+            "description": "Count letter occurrences in several large text files, still all lowercase",
+            "command": "./par_letter_counts test_cases/resources/large.txt test_cases/resources/large_2.txt test_cases/resources/large_3.txt",
+            "output_file": "test_cases/output/multi_large.txt"
+        },
+        {
+            "name": "Large Input Files With Uppercase",
+            "description": "Count letter occurrences in a large text file, now including both uppercase and lowercase characters",
+            "command": "./par_letter_counts test_cases/resources/large_upper.txt",
+            "output_file": "test_cases/output/single_large_uppercase.txt"
+        },
+        {
+            "name": "Several Large Input Files With Uppercase",
+            "description": "Count letter occurrences in several large text files, now including both uppercase and lowercase characters",
+            "command": "./par_letter_counts test_cases/resources/large_upper.txt test_cases/resources/large_upper_2.txt test_cases/resources/large_upper_3.txt test_cases/resources/large_upper_4.txt test_cases/resources/large_upper_5.txt test_cases/resources/large_upper_6.txt",
+            "output_file": "test_cases/output/multi_large_uppercase.txt"
+        }
+    ]
+}
