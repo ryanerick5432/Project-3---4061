@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #define ALPHABET_LEN 26
+int print_check = 0;
 
 /*
  * Counts the number of occurrences of each letter (case insensitive) in a text
@@ -74,7 +75,6 @@ int main(int argc, char **argv) {
         // No files to consume, return immediately
         return 0;
     }
-
     // TODO Create a pipe for child processes to write their results
     int pipe_fds[2];
     if (pipe(pipe_fds) == -1) {
@@ -110,6 +110,9 @@ int main(int argc, char **argv) {
     }
     for (int i = 0; i < (argc - 1); i++) {
         int temp_vals[ALPHABET_LEN];
+        for (int i = 0; i < ALPHABET_LEN; i++) {
+            temp_vals[i] = 0;
+        }
         if (read(pipe_fds[0], &temp_vals, sizeof(int) * ALPHABET_LEN) == -1) {
             perror("read");
             return 1;
@@ -132,8 +135,10 @@ int main(int argc, char **argv) {
         }
     }
     // TODO Change this code to print out the total count of each letter (case insensitive)
-    for (int i = 0; i < ALPHABET_LEN; i++) {
-        printf("%c Count: %d\n", 'a' + i, total_vals[i]);
+    if (print_check == 0) {
+        for (int i = 0; i < ALPHABET_LEN; i++) {
+            printf("%c Count: %d\n", 'a' + i, total_vals[i]);
+        }
     }
     return 0;
 }
