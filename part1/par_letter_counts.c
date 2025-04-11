@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #define ALPHABET_LEN 26
-int print_check = 0;
 
 /*
  * Counts the number of occurrences of each letter (case insensitive) in a text
@@ -122,27 +121,36 @@ int main(int argc, char **argv) {
         return 1;
     }
     // TODO Aggregate all the results together by reading from the pipe in the parent
+    // initialize total val array
     int total_vals[ALPHABET_LEN];
+    // initialize vals to 0
     for (int i = 0; i < ALPHABET_LEN; i++) {
         total_vals[i] = 0;
     }
+    // iterate/read from every different child/pipe write
     for (int i = 0; i < (argc - 1); i++) {
+        // use a temp val to add to total
         int temp_vals[ALPHABET_LEN];
+        // initialize temp vals to 0
         for (int i = 0; i < ALPHABET_LEN; i++) {
             temp_vals[i] = 0;
         }
+        // ream each write, one full array at a time and store in temp
         if (read(pipe_fds[0], &temp_vals, sizeof(int) * ALPHABET_LEN) == -1) {
             perror("read");
             return 1;
         }
+        // iterate through that, adding the temp_vals to total (adds 0 if nothing read)
         for (int j = 0; j < ALPHABET_LEN; j++) {
             total_vals[j] = total_vals[j] + temp_vals[j];
         }
     }
+    // done with read/close it
     if (close(pipe_fds[0]) == -1) {
         perror("close");
         return 1;
     }
+    // extra check to wait for each child
     for (int i = 0; i < (argc - 1); i++) {
         int status;
         if (wait(&status) == -1) {
@@ -153,10 +161,10 @@ int main(int argc, char **argv) {
         }
     }
     // TODO Change this code to print out the total count of each letter (case insensitive)
-    if (print_check == 0) {
-        for (int i = 0; i < ALPHABET_LEN; i++) {
-            printf("%c Count: %d\n", 'a' + i, total_vals[i]);
-        }
+    // prints each val out
+    for (int i = 0; i < ALPHABET_LEN; i++) {
+        printf("%c Count: %d\n", 'a' + i, total_vals[i]);
     }
+
     return 0;
 }
