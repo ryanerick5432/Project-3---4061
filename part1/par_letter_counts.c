@@ -57,6 +57,7 @@ int process_file(const char *file_name, int out_fd) {
     // initialize memory for alphabet num array
     int *counts = malloc(sizeof(int) * ALPHABET_LEN);
     if (counts == NULL) {
+        fprintf(stderr, "malloc error\n");
         return -1;
     }
     // initialize array w/0s
@@ -154,6 +155,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < (argc - 1); i++) {
         int status;
         if (wait(&status) == -1) {
+            fprintf(stderr, "wait error\n");
             return 1;
         }
         if (!WIFEXITED(status)) {
