@@ -19,16 +19,22 @@ int print_check = 0;
  * Returns 0 on success or -1 on error.
  */
 int count_letters(const char *file_name, int *counts) {
+    // open file
     FILE *fp = fopen(file_name, "r");
     if (fp == NULL) {
         perror("fopen");
         return -1;
     }
+    // create temporary var to hold chars - set as nonalphabet to prevent extra counting
     char temp_char = '1';
+    // read one char
     while (fread(&temp_char, sizeof(char), 1, fp) > 0) {
         if (isalpha(temp_char)) {
+            // ignore capitalizations
             temp_char = tolower(temp_char);
+            // get ASCII value
             int index = temp_char;
+            // First index, 0 = 'a' & 'a' = 97 - get index by (ASCII - 97)
             index = (index - 97);
             counts[index]++;
         }
@@ -49,10 +55,12 @@ int count_letters(const char *file_name, int *counts) {
  * Returns 0 on success or -1 on error
  */
 int process_file(const char *file_name, int out_fd) {
+    // initialize memory for alphabet num array
     int *counts = malloc(sizeof(int) * ALPHABET_LEN);
     if (counts == NULL) {
         return -1;
     }
+    // initialize array w/0s
     for (int i = 0; i < ALPHABET_LEN; i++) {
         counts[i] = 0;
     }
@@ -60,12 +68,15 @@ int process_file(const char *file_name, int out_fd) {
         free(counts);
         return -1;
     }
+    // store write result in a variable to error check
+    // write whole array at once
     ssize_t temp = write(out_fd, counts, sizeof(int) * ALPHABET_LEN);
     if (temp == -1) {
         perror("write");
         free(counts);
         return -1;
     }
+    // free memory for array
     free(counts);
     return 0;
 }
@@ -82,23 +93,30 @@ int main(int argc, char **argv) {
         return 1;
     }
     // TODO Fork a child to analyze each specified file (names are argv[1], argv[2], ...)
+    // for loop for number of args - one child per arg/file
     for (int i = 1; i < argc; i++) {
         pid_t child_pid = fork();
         if (child_pid == -1) {
             perror("fork");
             return 1;
         }
+        // child process
         if (child_pid == 0) {
+            // close read end of pipe
             if (close(pipe_fds[0]) == -1) {
                 perror("close");
+                // exit 1 if error
                 exit(1);
             }
+            // process file
             if (process_file(argv[i], pipe_fds[1]) == -1) {
                 exit(1);
             }
             exit(0);
         }
     }
+    // parent process
+    // close write end of pipe
     if (close(pipe_fds[1]) == -1) {
         perror("close");
         return 1;
