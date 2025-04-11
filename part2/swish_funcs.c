@@ -35,7 +35,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
             continue;
         } else {
             if (close(pipes[i]) == -1) {
-                ret_val = -1;
+                ret_val = -1;    // sets return value for handling error after loop
             }
         }
     }
@@ -47,7 +47,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
         if (out_idx != -1) {
             close(pipes[out_idx]);
         }
-        printf("Pipe Close");
+        fprintf(stderr, "Pipe Close");
         return ret_val;
     }
 
@@ -58,20 +58,20 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
     if (in_idx != -1) {
         // sets up the backup for stdin, for error
         if ((stdin_bak = dup(STDIN_FILENO)) == -1) {
+            perror("dup");
             close(pipes[in_idx]);
             if (out_idx != -1) {
                 close(pipes[out_idx]);
             }
-            perror("dup");
             return -1;
         }
         // redirects stdin to the input pipe.
         if (dup2(pipes[in_idx], STDIN_FILENO) == -1) {
+            perror("dup2");
             close(pipes[in_idx]);
             if (out_idx != -1) {
                 close(pipes[out_idx]);
             }
-            perror("dup2");
             return -1;
         }
     }
@@ -82,22 +82,22 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
     if (out_idx != -1) {
         // sets up output backup
         if ((stdout_bak = dup(STDOUT_FILENO)) == -1) {
+            perror("dup");
             close(pipes[out_idx]);
             if (in_idx != -1) {
                 close(pipes[in_idx]);
                 dup2(stdin_bak, STDIN_FILENO);
             }
-            perror("dup");
             return -1;
         }
         // redirects output to pipe write end, from standard output.
         if (dup2(pipes[out_idx], STDOUT_FILENO) == -1) {
+            perror("dup2");
             close(pipes[out_idx]);
             if (in_idx != -1) {
                 dup2(stdin_bak, STDIN_FILENO);
                 close(pipes[in_idx]);
             }
-            perror("dup2");
             return -1;
         }
     }
@@ -112,7 +112,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
             dup2(stdout_bak, STDOUT_FILENO);
             close(pipes[out_idx]);
         }
-        printf("run_command error");
+        fprintf(stderr, "run_command error");
         return -1;
     }
     return 0;
@@ -122,7 +122,7 @@ int run_pipelined_commands(strvec_t *tokens) {
     // total number of pipes will equal total of delimiting character '|'
     int num_pipe;
     if ((num_pipe = strvec_num_occurrences(tokens, "|")) < 1) {
-        printf("Must include pipes");
+        fprintf(stderr, "Must include pipes");
         return -1;
     }
     // total number of processes is always one more than total pipes
@@ -164,7 +164,7 @@ int run_pipelined_commands(strvec_t *tokens) {
         for (int j = cleanup_idx; j < num_proc; j++) {
             strvec_clear(&piped_commands[j]);
         }
-        printf("slicing error");
+        fprintf(stderr, "slicing error");
         return -1;
     }
 
@@ -172,6 +172,7 @@ int run_pipelined_commands(strvec_t *tokens) {
     int pipe_fds[num_pipe * 2];
     for (int i = 0; i < num_pipe; i++) {
         if (pipe(pipe_fds + 2 * i) == -1) {
+            perror("pipe");
             for (int j = 0; j < i; j++) {    // close all pipes on error
                 close(pipe_fds[2 * j]);
                 close(pipe_fds[2 * j + 1]);
@@ -179,7 +180,6 @@ int run_pipelined_commands(strvec_t *tokens) {
             for (int j = 0; j < num_proc; j++) {    // clear the tokens on error
                 strvec_clear(&piped_commands[j]);
             }
-            printf("pipe");
             return -1;
         }
     }
@@ -199,14 +199,14 @@ int run_pipelined_commands(strvec_t *tokens) {
             if (i == 0) {
                 // logic for process # 1 --- -1 = standard input, 1 = 1st pipe write end as output
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, -1, 1) == -1) {
-                    printf("run_piped_command error");
+                    fprintf(stderr, "run_piped_command error");
                     exit(1);
                 }
                 // logic for process # n --- 2 * i - 2 = input file, -1 = standard output
             } else if (i == num_pipe) {
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, 2 * i - 2, -1) ==
                     -1) {
-                    printf("run_piped_command error");
+                    fprintf(stderr, "run_piped_command error");
                     exit(1);
                 }
                 // logic for process # 2 .... i = n --- 1 2 * i - 2 = input file, 2 * i + 1 = output
@@ -214,7 +214,7 @@ int run_pipelined_commands(strvec_t *tokens) {
             } else {
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, 2 * i - 2,
                                       2 * i + 1) == -1) {
-                    printf("run_piped_command error");
+                    fprintf(stderr, "run_piped_command error");
                     exit(1);
                 }
             }
@@ -254,8 +254,8 @@ int run_pipelined_commands(strvec_t *tokens) {
         }
         // if any child exited on error (code 1), return -1
         if (WEXITSTATUS(status) != 0) {
+            fprintf(stderr, "child failure");
             ret = -1;
-            printf("child failure");
         }
     }
     // return based on success - 0, or error - -1
