@@ -47,7 +47,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
         if (out_idx != -1) {
             close(pipes[out_idx]);
         }
-
+        printf("Pipe Close");
         return ret_val;
     }
 
@@ -62,6 +62,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
             if (out_idx != -1) {
                 close(pipes[out_idx]);
             }
+            perror("dup");
             return -1;
         }
         // redirects stdin to the input pipe.
@@ -70,6 +71,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
             if (out_idx != -1) {
                 close(pipes[out_idx]);
             }
+            perror("dup2");
             return -1;
         }
     }
@@ -85,6 +87,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
                 close(pipes[in_idx]);
                 dup2(stdin_bak, STDIN_FILENO);
             }
+            perror("dup");
             return -1;
         }
         // redirects output to pipe write end, from standard output.
@@ -94,6 +97,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
                 dup2(stdin_bak, STDIN_FILENO);
                 close(pipes[in_idx]);
             }
+            perror("dup2");
             return -1;
         }
     }
@@ -108,6 +112,7 @@ int run_piped_command(strvec_t *tokens, int *pipes, int n_pipes, int in_idx, int
             dup2(stdout_bak, STDOUT_FILENO);
             close(pipes[out_idx]);
         }
+        printf("run_command error");
         return -1;
     }
     return 0;
@@ -117,6 +122,7 @@ int run_pipelined_commands(strvec_t *tokens) {
     // total number of pipes will equal total of delimiting character '|'
     int num_pipe;
     if ((num_pipe = strvec_num_occurrences(tokens, "|")) < 1) {
+        printf("Must include pipes");
         return -1;
     }
     // total number of processes is always one more than total pipes
@@ -158,6 +164,7 @@ int run_pipelined_commands(strvec_t *tokens) {
         for (int j = cleanup_idx; j < num_proc; j++) {
             strvec_clear(&piped_commands[j]);
         }
+        printf("slicing error");
         return -1;
     }
 
@@ -172,6 +179,7 @@ int run_pipelined_commands(strvec_t *tokens) {
             for (int j = 0; j < num_proc; j++) {    // clear the tokens on error
                 strvec_clear(&piped_commands[j]);
             }
+            printf("pipe");
             return -1;
         }
     }
@@ -180,6 +188,7 @@ int run_pipelined_commands(strvec_t *tokens) {
         pid_t c_pid = fork();
 
         if (c_pid == -1) {    // error on fork
+            perror("fork");
             for (int j = 0; j < num_proc; j++) {
                 close(pipe_fds[j]);
             }
@@ -190,12 +199,14 @@ int run_pipelined_commands(strvec_t *tokens) {
             if (i == 0) {
                 // logic for process # 1 --- -1 = standard input, 1 = 1st pipe write end as output
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, -1, 1) == -1) {
+                    printf("run_piped_command error");
                     exit(1);
                 }
                 // logic for process # n --- 2 * i - 2 = input file, -1 = standard output
             } else if (i == num_pipe) {
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, 2 * i - 2, -1) ==
                     -1) {
+                    printf("run_piped_command error");
                     exit(1);
                 }
                 // logic for process # 2 .... i = n --- 1 2 * i - 2 = input file, 2 * i + 1 = output
@@ -203,6 +214,7 @@ int run_pipelined_commands(strvec_t *tokens) {
             } else {
                 if (run_piped_command(&piped_commands[i], pipe_fds, num_pipe * 2, 2 * i - 2,
                                       2 * i + 1) == -1) {
+                    printf("run_piped_command error");
                     exit(1);
                 }
             }
@@ -219,6 +231,7 @@ int run_pipelined_commands(strvec_t *tokens) {
     // clear all pipes, necessary to remove blocking
     for (int j = 0; j < num_pipe * 2; j++) {
         if (close(pipe_fds[j]) == -1) {
+            perror("close");
             ret = -1;
         }
     }
@@ -229,6 +242,7 @@ int run_pipelined_commands(strvec_t *tokens) {
         // wait for all children
         if (wait(&status) == -1) {
             // if error on wait, clean up
+            perror("wait");
             for (int j = 0; j < num_pipe; j++) {
                 close(pipe_fds[j * 2]);
                 close(pipe_fds[j * 2 + 1]);
@@ -236,11 +250,12 @@ int run_pipelined_commands(strvec_t *tokens) {
             for (int j = 0; j < num_proc; j++) {
                 strvec_clear(&piped_commands[j]);
             }
-            return -1;
+            ret = -1;
         }
         // if any child exited on error (code 1), return -1
         if (WEXITSTATUS(status) != 0) {
             ret = -1;
+            printf("child failure");
         }
     }
     // return based on success - 0, or error - -1
